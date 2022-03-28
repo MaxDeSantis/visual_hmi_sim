@@ -1,0 +1,9 @@
+
+<launch>
+
+    <include file="$(find turtlebot3_gazebo)/launch/turtlebot3_world.launch" />
+    <node pkg="web_video_server" name="video_server" type="web_video_server" />
+    <!-- <node pkg="visual_hmi" name="server_gui" type="http_server.py" output="screen"/> -->
+    <node pkg="visual_hmi" name="server_gui" type="gui_startup.sh" output="screen"/>
+
+</launch>

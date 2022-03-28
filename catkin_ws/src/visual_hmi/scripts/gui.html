@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+</head>
+
+
+
+
+<body>
+    <div>
+        <h2>Testing</h2>
+    </div>
+    <div id="image">
+        <img src="http://localhost:8080/stream?topic=/camera/rgb/image_raw">
+    </div>
+</body>
+
+<script>
+
+    document.getElementById('image').onclick = function clickEvent(e) {
+          // e = Mouse click event.
+          var rect = e.target.getBoundingClientRect();
+          var x = e.clientX - rect.left; //x position within the element.
+          var y = e.clientY - rect.top;  //y position within the element.
+          console.log("Left? : " + x + " ; Top? : " + y + ".");
+          console.log("Width: " + (rect.right - rect.left) + "; Height: " + (rect.bottom - rect.top));
+        }
+    </script>
+
+</html>

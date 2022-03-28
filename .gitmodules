@@ -1,0 +1,3 @@
+[submodule "catkin_ws/catkin_ws/src/web_video_server"]
+	path = catkin_ws/catkin_ws/src/web_video_server
+	url = https://github.com/RobotWebTools/web_video_server
