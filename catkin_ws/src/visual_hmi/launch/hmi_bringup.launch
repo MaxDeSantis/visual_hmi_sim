@@ -1,12 +1,18 @@
 
 <launch>
 
+    <!-- Start gazebo simulation -->
     <include file="$(find turtlebot3_gazebo)/launch/turtlebot3_world.launch" />
+    <!-- Start streaming turtlebot's camera -->
     <node pkg="web_video_server" name="video_server" type="web_video_server" />
-    <!-- <node pkg="visual_hmi" name="server_gui" type="http_server.py" output="screen"/> -->
+    
+    <!-- Start web GUI -->
     <node pkg="visual_hmi" name="server_gui" type="gui_startup.sh" output="screen"/>
 
+    <!-- Start ROSBridge server, for javascript communication -->
     <include file="/opt/ros/noetic/share/rosbridge_server/launch/rosbridge_websocket.launch"/>
+    
+    <!-- Start action server to receive info from web server -->
     <node pkg="visual_hmi" name="action_server" type="action_server_test.py" output="screen"/>
 
 

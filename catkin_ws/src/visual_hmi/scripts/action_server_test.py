@@ -6,6 +6,7 @@ import rospy
 import actionlib
 
 from visual_hmi.msg import SelectGoalLocationAction
+from visual_hmi.msg import SelectGoalLocationFeedback
 
 class GoalServer:
     def __init__(self):
@@ -15,7 +16,10 @@ class GoalServer:
 
     def execute(self, goal):
         self.server.set_succeeded()
-        print("server")
+        _feedback = SelectGoalLocationFeedback()
+        _feedback.feedback = 3
+        self.server.publish_feedback(_feedback)
+        print("server execute")
 
     
 if __name__ == '__main__':
