@@ -14,12 +14,21 @@ class GoalServer:
 
         self.server.start()
 
+    def GetXYZ(self, goalX, goalY):
+        print("getting xyz")
+
+        #now, how to transform from camera XY to world XYZ?
+        # image in camera_rgb_optical_frame
+
+
     def execute(self, goal):
         self.server.set_succeeded()
         _feedback = SelectGoalLocationFeedback()
         _feedback.feedback = 3
         self.server.publish_feedback(_feedback)
-        print("server execute")
+        #print("server execute")
+
+        self.GetXYZ(goal.x, goal.y)
 
     
 if __name__ == '__main__':
