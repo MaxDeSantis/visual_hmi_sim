@@ -6,4 +6,9 @@
     <!-- <node pkg="visual_hmi" name="server_gui" type="http_server.py" output="screen"/> -->
     <node pkg="visual_hmi" name="server_gui" type="gui_startup.sh" output="screen"/>
 
+    <include file="/opt/ros/noetic/share/rosbridge_server/launch/rosbridge_websocket.launch"/>
+    <node pkg="visual_hmi" name="action_server" type="action_server_test.py" output="screen"/>
+
+
+
 </launch>
