@@ -15,6 +15,15 @@
     <!-- Start action server to receive info from web server -->
     <node pkg="visual_hmi" name="action_server" type="action_server_test.py" output="screen"/>
 
+    <!-- Start SLAM simulation -->
+
+    <include file="$(find turtlebot3_slam)/launch/turtlebot3_slam.launch">
+        <arg name="slam_methods" value="gmapping"/>
+    </include>
+
+    <!-- Implement navigation commands -->
+    <include file="$(find turtlebot3_navigation)/launch/move_base.launch"/>
+
 
 
 </launch>
