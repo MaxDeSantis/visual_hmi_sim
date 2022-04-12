@@ -1,8 +1,8 @@
 
 <launch>
-
     <!-- Start gazebo simulation -->
-    <include file="$(find turtlebot3_gazebo)/launch/turtlebot3_world.launch" />
+    <include file="$(find turtlebot3_gazebo)/launch/turtlebot3_house.launch"/>
+
     <!-- Start streaming turtlebot's camera -->
     <node pkg="web_video_server" name="video_server" type="web_video_server" />
     

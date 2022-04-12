@@ -9,75 +9,161 @@
 
 <body>
     <div>
-        <h2>Testing</h2>
+        <h2>Visual Turtlebot3 Interface</h2>
+        <p>Click to move the robot</p>
     </div>
     <div id="image">
-        <img src="http://localhost:8080/stream?topic=/camera/rgb/image_raw">
+        <img src="http://localhost:8080/stream?topic=/camera/rgb/image_raw" style="width: 960px; height: 540;">
     </div>
+    <div id="controls" style="display: table-row">
+        <div id="rotate_controls" style="display: table-cell; padding-left: 20px">
+            <button onmousedown="SendVel(.5)" onmouseup="SendVel(0)" id="turn_left_btn">Left</button>
+            <button onmousedown="SendVel(-.5)" onmouseup="SendVel(0)" id="turn_right_btn">Right</button>
+        </div>
+        <div id="connection_status" style="display: table-cell; padding-left: 20px">
+            <h3>Robot Connection</h3>
+            <p id="status_connection">Not Connected</p>
+        </div>
+        <div id="position_status" style="display: table-cell; padding-left: 20px">
+            <h3>Robot Position</h3>
+            <p id="status_robot_position">x: ? y: ?</p>
+        </div>
+        <div id="goal_status" style="display: table-cell; padding-left: 20px">
+            <h3>Goal Position</h3>
+            <p id="status_goal_position">x: ? y: ?</p>
+        </div>
+    </div>
+    
 </body>
 
 
 <script src="http://static.robotwebtools.org/EventEmitter2/current/eventemitter2.js"></script>
-<script src="http://static.robotwebtools.org/roslibjs/current/roslib.js"></script>
+<script type="text/javascript" src="http://static.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
 
+<!-- <script src="gui_logic.js"></script> -->
 <script>
-    var ros = new ROSLIB.Ros({
-        url : 'ws://localhost:9090' //Connects to rosbridge web socket
-    });
-    
-    var GoalClient = new ROSLIB.ActionClient({
+
+// SETUP ROS
+var ros = new ROSLIB.Ros({
+    url : 'ws://localhost:9090' //Connects to rosbridge web socket
+});
+
+var GoalClient = new ROSLIB.ActionClient({
+    ros : ros,
+    serverName : '/Select_Goal',
+    actionName : 'visual_hmi/SelectGoalLocationAction'
+});
+
+ros.on('connection', function() {
+    console.log('Connected');
+    document.getElementById("status_connection").innerHTML = "CONNECTED";
+});
+
+ros.on('error', function(error) {
+    console.log('Error: ' + error);
+    document.getElementById("status_connection").innerHTML = "ERROR";
+});
+
+ros.on('close', function(feedback) {
+    console.log('Connection closed');
+    document.getElementById("status_connection").innerHTML = "CLOSED";
+});
+
+var goal_listener = new ROSLIB.Topic({
+    ros : ros,
+    name : '/move_base_simple/goal',
+    messageType : 'geometry_msgs/PoseStamped'
+})
+
+goal_listener.subscribe(function(message) {
+    x = message.pose.position.x.toFixed(2);
+    y = message.pose.position.y.toFixed(2);
+    var goalPos = "x: " + x.padStart(5, " ") + " | y: " + y.padStart(5, " ");
+    document.getElementById("status_goal_position").innerHTML = goalPos;
+})
+
+var odom_listener = new ROSLIB.Topic({
+    ros : ros,
+    name : '/odom',
+    messageType : 'nav_msgs/Odometry'
+})
+
+odom_listener.subscribe(function(message) {
+    x = message.pose.pose.position.x.toFixed(2);
+    y = message.pose.pose.position.y.toFixed(2);
+
+    var newPos = "x: " + x.padStart(5, " ") + " | y: " + y.padStart(5, " ");
+    document.getElementById("status_robot_position").innerHTML = newPos;
+})
+
+// CMDVEL publisher
+var cmdVel = new ROSLIB.Topic({
         ros : ros,
-        serverName : '/Select_Goal',
-        actionName : 'visual_hmi/SelectGoalLocationAction'
-    });
+        name: '/cmd_vel',
+        messageType : 'geometry_msgs/Twist'
+});
 
-    ros.on('connection', function() {
-        console.log('Error connecting');
-    });
+// Rotate left if rotateLeft true, otherwise rotate right
 
-    ros.on('error', function(error) {
-        console.log('Error: ' + error);
-    });
-
-    ros.on('close', function(feedback) {
-        console.log('Connection closed');
-    });
-
-    function SendGoal(xLoc, yLoc) {
-
-        var goal = new ROSLIB.Goal({
-            actionClient : GoalClient,
-            goalMessage : {
-                x : xLoc,
-                y : yLoc
+function SendVel(angular_vel) {
+    var twist = new ROSLIB.Message({
+            linear : {
+                x : 0,
+                y : 0,
+                z : 0
+            },
+            angular : {
+                x : 0,
+                y : 0,
+                z : angular_vel
             }
-    }   )
-
-        goal.on('feedback', function(feedback) {
-            console.log('Feedback: ' + feedback.sequence);
         });
 
-        goal.on('result', function(result) {
-            console.log('Final Result: ' + result.sequence);
-        });
-
-        goal.send();
-    }
-
-    //goal.send();
-
-    document.getElementById('image').onclick = function clickEvent(e) {
-        // e = Mouse click event.
-        var rect = e.target.getBoundingClientRect();
-        var x = e.clientX - rect.left; //x position within the element.
-        var y = e.clientY - rect.top;  //y position within the element.
-        console.log("Left? : " + x + " ; Top? : " + y + ".");
-        console.log("Width: " + (rect.right - rect.left) + "; Height: " + (rect.bottom - rect.top));
-        SendGoal(x, y);
-    }
+    
+    cmdVel.publish(twist);
+    var t = setTimeout(100, SendVel);
+}
 
 
 
-    </script>
+function SendGoal(xLoc, yLoc) {
+
+    var goal = new ROSLIB.Goal({
+        actionClient : GoalClient,
+        goalMessage : {
+            x : xLoc,
+            y : yLoc
+        }
+    });
+
+    goal.on('feedback', function(feedback) {
+        console.log('Feedback: ' + feedback.sequence);
+    });
+
+    goal.on('result', function(result) {
+        console.log('Final Result: ' + result.sequence);
+    });
+
+    goal.send();
+}
+
+document.getElementById('image').onclick = function clickEvent(e) {
+    // e = Mouse click event.
+    var rect = e.target.getBoundingClientRect();
+    var x = e.clientX - rect.left; //x position within the element.
+    var y = e.clientY - rect.top;  //y position within the element.
+    x = x * 2;
+    y = y * 2;
+    console.log("Left? : " + x + " ; Top? : " + y + ".");
+    console.log("Width: " + (rect.right - rect.left) + "; Height: " + (rect.bottom - rect.top));
+    SendGoal(x, y);
+}
+
+// SETUP BUTTONS
+
+
+
+
+</script>
 
 </html>

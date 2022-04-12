@@ -14,20 +14,25 @@ import math
 from visual_hmi.msg import SelectGoalLocationAction
 from visual_hmi.msg import SelectGoalLocationFeedback
 from sensor_msgs.msg import Image
+from nav_msgs.msg import Odometry
 import cv2
 import numpy as np
 from cv_bridge import CvBridge, CvBridgeError
-from geometry_msgs.msg import PointStamped, PoseStamped
+from geometry_msgs.msg import PointStamped, PoseStamped, Twist
 import tf2_ros
 import tf2_geometry_msgs
 
 
 class GoalServer:
     def __init__(self):
-        self.server = actionlib.SimpleActionServer('Select_Goal', SelectGoalLocationAction, self.execute, False)
-
+        self.server = actionlib.SimpleActionServer('Select_Goal', SelectGoalLocationAction, self.Position, False)
         self.server.start()
+
+        #self.rotate_server = actionlib.SimpleActionServer('Rotate', Twist, self.Rotate, False)
+        #self.rotate_server.start()
+
         rospy.Subscriber('/camera/depth/image_raw', Image, self.GetDepthImage)
+        rospy.Subscriber('/odom', Odometry, self.GetOdom)
         self.bridge = CvBridge()
         self.ANGLERATIO = 0.0324 * math.pi/180 #rad per px
 
@@ -36,6 +41,15 @@ class GoalServer:
         self.tf_buffer = tf2_ros.Buffer()
         self.tf_listener = tf2_ros.TransformListener(self.tf_buffer)
         
+    def GetOdom(self, msg):
+        pose = PoseStamped()
+        pose.pose.orientation = msg.pose.pose.orientation
+        try:
+            transform = self.tf_buffer.lookup_transform("camera_link", msg.header.frame_id, msg.header.stamp, rospy.Duration(1.0))
+            newPose = tf2_geometry_msgs.do_transform_pose(pose, transform)
+            self.orientation = newPose.pose.orientation
+        except (tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException):
+            print("get orientation failed")
 
     def GetDepthImage(self, msg):
         try:
@@ -43,7 +57,6 @@ class GoalServer:
             self.im = depth_im
         except CvBridgeError:
             print("uh oh")
-        
         
 
     def GetXYZ(self, goalX, goalY):
@@ -73,6 +86,8 @@ class GoalServer:
         pointPose.pose.position.y = side
         pointPose.pose.position.z = 0
         pointPose.header.frame_id = "camera_link"
+        pointPose.pose.orientation = self.orientation
+        
         
         # Attempt to transform point to map frame
         try:
@@ -90,7 +105,7 @@ class GoalServer:
 
 
 
-    def execute(self, goal):
+    def Position(self, goal):
         self.server.set_succeeded()
         _feedback = SelectGoalLocationFeedback()
         _feedback.feedback = 3
